@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+  <head lang="en">
+    <meta charset="UTF-8">
+    <title>Yeah, baby .. oh yeah</title>
+	<script type="text/javascript" src="http://vietyeah.com/public/assets/js/jquery-1.11.0.min.js?v=1.5.2"></script>
+	<link rel="stylesheet" href="css/font-awesome.css" />
+    <style type="text/css">
+		body {
+			margin: 50px 20px;
+		}
+		.picker{
+			margin: auto;
+			width: 720px;
+			height: 180px;
+		}
+		#display{
+			width: 100%;
+			height: 100px;
+			background: #730aa2;
+			margin-top: 30px;
+			border: 1px solid #000;
+		}
+		.picker input{
+			display: block;
+			width: 100%;
+		}
+		#color-slider {
+			margin: auto;
+			width: 800px;
+			height: 180px;
+		}
+		#color-slider .color {
+			margin: 15px 0px;
+			width: 765px;
+			height: 20px;
+		}
+		#color-slider .color > div {
+			position: relative;
+			width: 3px;
+			height: 20px;
+			display: inline-block;
+		}
+		.tooltip {
+			position: absolute;
+			background: #fafafa;
+			border: 1px solid #000;
+			padding: 5px;
+			top: -32px;
+			width: 23px;
+			height: 18px;
+			color: #000;
+			z-index: 100000;
+			text-align: center;
+			font-size: 13px;
+			border-radius: 3px;
+			left: -15px;
+		}
+	</style>
+  </head>
+<body>
+<!-- Mẫu 1 -->
+<div id="color-slider">
+	<div class="color" ondragstart="return false;" id="l-red"></div>
+	<div class="color" ondragstart="return false;" id="l-green"></div>
+	<div class="color" ondragstart="return false;" id="l-blue"></div>
+	<div class="show-rgb">
+		Red <input type="text" id="input-red" />
+		Green <input type="text" id="input-green" />
+		Blue <input type="text" id="input-blue" />
+		<span id="hex"></span>
+	</div>
+</div>
+<!-- Hết mẫu 1 -->
+
+<!-- Mẫu 2 -->
+<div class="picker">
+    Red <input type="range" min="0" max="255" step="1" id="red" value="115">
+    Green <input type="range" min="0" max="255" step="1" id="green" value="10">
+    Blue <input type="range" min="0" max="255" step="1" id="blue" value="162">
+    <div id="display"></div>
+</div>
+<!-- Hết mẫu 2 --->
+
+<script type="text/javascript">
+	
+	/* Javascript cho mẫu 2 */
+	$("input[type=range]").on('change mousemove', function() {
+		let red = $("#red").val(),
+			green = $("#green").val(),
+			blue = $("#blue").val();
+		$("#display").css({
+			background: "rgb(" + red + ", " + green + ", " + blue + ")"
+		});
+	});
+	/* Kết thúc mẫu 2 */
+	
+	/* Javscript cho mẫu 1 */
+	
+	/* ========================================== *\
+		Khởi tạo 3 dãy màu Red, Green, Blue 
+		Nếu viết bằng PHP echo ra luôn thì không
+		cần đoạn này
+	\* ========================================== */
+	for(k = 1; k <= 255; k++) {
+		let el_red = $('<div />', { 'data-value': k, class: 'color' + k }),
+			el_green = $('<div />', { 'data-value': k, class: 'color' + k }),
+			el_blue = $('<div />', { 'data-value': k, class: 'color' + k });
+			
+		el_red.css({
+			background: "rgb(" + k + ", 0, 0)"
+		});
+
+		el_green.css({
+			background: "rgb(0, " + k + ", 0)"
+		});
+		
+		el_blue.css({
+			background: "rgb(0, 0, " + k + ")"
+		});
+
+		$("#l-red").append(el_red);
+		$("#l-green").append(el_green);
+		$("#l-blue").append(el_blue);
+	}
+	
+	/* Màu mặc định từ 0 để 255 */
+	var _default_r = 123, 
+		_default_g = 50,
+		_default_b = 95;
+		
+	$("#input-red").val(_default_r);
+	$("#input-green").val(_default_g);
+	$("#input-blue").val(_default_b);
+	
+	$("#hex").empty().text(rgbToHex(_default_r, _default_g, _default_b)); // hiển thị mã hex
+	
+	$("#display").css({
+		background: "rgb(" + _default_r + ", " + _default_g + ", " + _default_b + ")"
+	});
+	
+	/* show tooltip mã màu mặc định */
+	var elm_r = '.color' + (_default_r ? _default_r : 1),
+		elm_g = '.color' + (_default_g ? _default_g : 1),
+		elm_b = '.color' + (_default_b ? _default_b : 1);
+		
+	$("#l-red " + elm_r).append('<div class="tooltip">' + _default_r + '</div>');
+	$("#l-green "  + elm_g).append('<div class="tooltip">' + _default_g + '</div>');
+	$("#l-blue " + elm_b).append('<div class="tooltip">' + _default_b + '</div>');
+	
+	/* Click vào từng màu trên thanh màu, hiện tootle mã màu */
+	$(document).on('click', '.color div', function() {
+		let id = $(this).parent().attr('id'),
+			value = $(this).data('value');
+			
+		$(this).parent().find(".tooltip").remove();
+		$(this).append('<div class="tooltip">' + value + '</div>');
+		
+		start(id, value);
+		
+	});
+	
+	/* Sự kiện nhấn chuột và rê trên thanh màu */
+	var clicking = false;
+
+	$('.color').mousedown(function(){ clicking = true; });
+	
+	$(document).mouseup(function(){ clicking = false; })
+
+	$('.color').mousemove(function(e){
+		if(clicking == false) return;
+		let en = e.target,
+			value = $(en).data('value'),
+			id = $(this).attr('id');
+			
+		$(this).find(".tooltip").remove();
+		$(en).append('<div class="tooltip">' + value + '</div>');
+		
+		start(id, value);
+	});
+	
+	/* Hiển thị màu */
+	function start(id, value) {
+		switch (id) {
+			case 'l-red': _default_r = value; break;
+			case 'l-green': _default_g = value; break;
+			case 'l-blue': _default_b = value; break;
+		}
+		
+		$("#display").css({
+			background: "rgb(" + _default_r + ", " + _default_g + ", " + _default_b + ")"
+		});
+		
+		$("#input-red").val(_default_r);
+		$("#input-green").val(_default_g);
+		$("#input-blue").val(_default_b);
+		
+		$("#hex").empty().text(rgbToHex(_default_r, _default_g, _default_b));
+	}
+	
+	/* Hai hàm rgbToHex và componentToHex dùng để convert RGB sang mã Hex */
+	function rgbToHex(r, g, b) {
+		return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+	}
+	function componentToHex(c) {
+		var hex = c.toString(16);
+		return hex.length == 1 ? "0" + hex : hex;
+	}
+	
+	/* Kết thúc mẫu 1 */
+</script>
+</body>
+</html>
+
+
+
+
